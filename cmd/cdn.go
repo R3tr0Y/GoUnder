@@ -19,14 +19,53 @@ type FofaConfig struct {
 }
 
 type FofaResponse struct {
-	Error   bool       `json:"error"`
-	Results [][]string `json:"results"`
-	Msg     string     `json:"errmsg"`
+	Error   bool            `json:"error"`
+	Results [][]string      `json:"-"`
+	Msg     string          `json:"errmsg"`
+	raw     json.RawMessage `json:"results"`
+}
+
+// 自定义 UnmarshalJSON 方法处理兼容结构
+func (f *FofaResponse) UnmarshalJSON(data []byte) error {
+	// 定义辅助结构体匹配大结构
+	type Alias FofaResponse
+	aux := &struct {
+		Results json.RawMessage `json:"results"`
+		*Alias
+	}{
+		Alias: (*Alias)(f),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// 尝试先当成 [][]string 来解析
+	var result2D [][]string
+	if err := json.Unmarshal(aux.Results, &result2D); err == nil {
+		f.Results = result2D
+		return nil
+	}
+
+	// 如果不是 [][]string，再试着按 []string 解析
+	var result1D []string
+	if err := json.Unmarshal(aux.Results, &result1D); err == nil {
+		// 包装成 [][]string 的形式
+		for _, r := range result1D {
+			f.Results = append(f.Results, []string{r})
+		}
+		return nil
+	}
+
+	// 两种都不匹配，返回错误
+	return fmt.Errorf("无法解析 results 字段: %s", string(aux.Results))
 }
 
 var targetURL string
 var pattern string
 var cfg FofaConfig
+var real_ips []string
+
 var cdnCmd = &cobra.Command{
 	Use:   "cdn",
 	Short: "尝试识别隐藏在CDN后的真实IP",
@@ -52,25 +91,49 @@ var cdnCmd = &cobra.Command{
 
 		// query := fmt.Sprintf(`host="%s" && is_cloud=false`, extractHost(targetURL))
 		// encodedQuery := base64.StdEncoding.EncodeToString([]byte(query))
-		var query, encodedQuery string
-		if pattern == "" {
-			query, encodedQuery = get_query("host", targetURL)
+		var queries, encodedQueries []string
+		if pattern != "" {
+			queries, encodedQueries = get_queries(pattern, targetURL)
+			fmt.Println("Query string: ", queries)
+			for _, encodedQuery := range encodedQueries {
+				real_ips = append(Query(encodedQuery), real_ips...)
+			}
 		} else {
-			query, encodedQuery = get_query(pattern, targetURL)
+			queries, encodedQueries = get_queries("host", targetURL)
+			fmt.Println("Query string: ", queries)
+			for _, encodedQuery := range encodedQueries {
+				real_ips = append(Query(encodedQuery), real_ips...)
+			}
+			queries, encodedQueries = get_queries("title", targetURL)
+			fmt.Println("Query string: ", queries)
+			for _, encodedQuery := range encodedQueries {
+				real_ips = append(Query(encodedQuery), real_ips...)
+			}
+			queries, encodedQueries = get_queries("icon", targetURL)
+			fmt.Println("Query string: ", queries)
+			for _, encodedQuery := range encodedQueries {
+				real_ips = append(Query(encodedQuery), real_ips...)
+			}
+
 		}
 
-		fmt.Println("Query string: " + query)
-		fmt.Println("Base64 encoded: " + encodedQuery)
+		// fmt.Println("Query string: ", queries)
+		// fmt.Println("Base64 encoded: ", encodedQueries)
 
 		// os.Exit(1)
-		Query(encodedQuery)
+
+		fmt.Println("✅ 找到以下可能的真实IP及开放的端口：")
+		for _, ip := range real_ips {
+			fmt.Println("- " + ip)
+
+		}
 	},
 }
 
-func isValidURL(raw string) bool {
-	u, err := url.ParseRequestURI(raw)
-	return err == nil && u.Host != ""
-}
+// func isValidURL(raw string) bool {
+// 	u, err := url.ParseRequestURI(raw)
+// 	return err == nil && u.Host != ""
+// }
 
 func extractHost(raw string) string {
 	if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
@@ -92,27 +155,53 @@ func loadFofaConfig() (*FofaConfig, error) {
 	return &cfg, err
 }
 
-func get_query(p string, input string) (string, string) {
+func get_queries(p string, input string) ([]string, []string) {
+	var queries, encodedQueries []string
 	switch p {
 	case "host":
 		query := fmt.Sprintf(`host="%s" && is_cloud=false`, extractHost(input))
 		encodedQuery := base64.StdEncoding.EncodeToString([]byte(query))
-		return query, encodedQuery
+		queries = append(queries, query)
+		encodedQueries = append(encodedQueries, encodedQuery)
+		return queries, encodedQueries
 	case "title":
-		title, _ := get_title(input)
-		fmt.Println("Get website title: " + title)
-		query := fmt.Sprintf(`title="%s" && is_cloud=false`, title)
-		encodedQuery := base64.StdEncoding.EncodeToString([]byte(query))
-		return query, encodedQuery
+		titles, _ := get_titles(input)
+		if len(titles) > 0 {
+			for _, title := range titles {
+				fmt.Println("Get website title: " + title)
+				query := fmt.Sprintf(`title="%s" && is_cloud=false`, title)
+				encodedQuery := base64.StdEncoding.EncodeToString([]byte(query))
+				queries = append(queries, query)
+				encodedQueries = append(encodedQueries, encodedQuery)
+			}
+			return queries, encodedQueries
+		} else {
+			return nil, nil
+		}
+
+		// title, _ := get_titles(input)
+
 	case "icon":
 		query := fmt.Sprintf(`icon_hash="%s" && is_cloud=false`, extractHost(input))
 		encodedQuery := base64.StdEncoding.EncodeToString([]byte(query))
-		return query, encodedQuery
+		queries = append(queries, query)
+		encodedQueries = append(encodedQueries, encodedQuery)
+		return queries, encodedQueries
 	}
-	return "", ""
+	return nil, nil
 }
 
-func get_title(url string) (string, error) {
+func get_titles(url string) ([]string, error) {
+	var titles []string
+	query := fmt.Sprintf(`host="%s"`, url)
+	encodedQuery := base64.StdEncoding.EncodeToString([]byte(query))
+
+	q := Query(encodedQuery, "title")
+
+	if q != nil {
+		titles = append(titles, q...)
+	}
+
 	// 确保URL有协议前缀
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		url = "http://" + url // 默认使用http，如果失败可以尝试https
@@ -126,33 +215,30 @@ func get_title(url string) (string, error) {
 			url = strings.Replace(url, "http://", "https://", 1)
 			resp, err = client.R().Get(url)
 			if err != nil {
-				return "", fmt.Errorf("failed to fetch URL: %v", err)
+				return titles, fmt.Errorf("failed to fetch URL: %v", err)
 			}
 		} else {
-			return "", fmt.Errorf("failed to fetch URL: %v", err)
+			return titles, fmt.Errorf("failed to fetch URL: %v", err)
 		}
 	}
 
 	body := resp.String()
 	titleStart := strings.Index(body, "<title>")
 	if titleStart == -1 {
-		return "", fmt.Errorf("no title found")
+		return titles, fmt.Errorf("no html title found")
 	}
 	titleStart += len("<title>")
 	titleEnd := strings.Index(body, "</title>")
 	if titleEnd == -1 {
-		return "", fmt.Errorf("malformed title tag")
+		return titles, fmt.Errorf("malformed html title tag")
 	}
+	titles = append(titles, body[titleStart:titleEnd])
 
-	query := fmt.Sprintf(`host="%s"`, url)
-	encodedQuery := base64.StdEncoding.EncodeToString([]byte(query))
-	Query(encodedQuery, "title")
-
-	return body[titleStart:titleEnd], nil
+	return titles, nil
 
 }
 
-func Query(encodedQuery string, field ...string) map[string]bool {
+func Query(encodedQuery string, field ...string) []string {
 	client := resty.New()
 	var result FofaResponse
 	f := ""
@@ -180,24 +266,28 @@ func Query(encodedQuery string, field ...string) map[string]bool {
 		return nil
 	}
 
-	ips := make(map[string]bool)
+	results := make(map[interface{}]bool)
 	for _, entry := range result.Results {
 		if len(entry) > 0 {
 			ipPort := entry[0]
-			ips[ipPort] = true
+			results[ipPort] = true
+
 		}
 	}
 
-	if len(ips) == 0 {
-		fmt.Println("未发现任何非CDN的IP")
+	if len(results) == 0 {
+		// fmt.Println("Not found any results")
 		return nil
 	}
+	var ips_slice []string
+	for r := range results {
+		// fmt.Println(" -", ip)
+		if r != "" {
+			ips_slice = append(ips_slice, r.(string))
+		}
 
-	fmt.Println("✅ 找到以下可能的真实IP及开放的端口：")
-	for ip := range ips {
-		fmt.Println(" -", ip)
 	}
-	return ips
+	return ips_slice
 }
 
 func init() {
