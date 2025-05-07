@@ -143,9 +143,11 @@ func get_title(url string) (string, error) {
 	if titleEnd == -1 {
 		return "", fmt.Errorf("malformed title tag")
 	}
+
 	query := fmt.Sprintf(`host="%s"`, url)
 	encodedQuery := base64.StdEncoding.EncodeToString([]byte(query))
-	Query(encodedQuery)
+	Query(encodedQuery, "title")
+
 	return body[titleStart:titleEnd], nil
 
 }
@@ -163,7 +165,7 @@ func Query(encodedQuery string, field ...string) map[string]bool {
 			"key":     cfg.Key,
 			"qbase64": encodedQuery,
 			"size":    "100",
-			"field":   f,
+			"fields":  f,
 		}).
 		SetResult(&result).
 		Get("https://fofa.info/api/v1/search/all")
