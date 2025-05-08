@@ -95,13 +95,13 @@ func cdnLookup(input string) {
 			fmt.Println("Query string:", queries)
 		}
 		for _, enc := range encoded {
-			for _, ip := range Query(enc) {
+			for _, ip := range Query(enc, "ip,port") {
 				resultSet[ip] = true
 			}
 		}
 	}
 
-	fmt.Println("✅ 找到以下可能的真实IP及开放的端口：")
+	fmt.Println("\n✅ 找到以下可能的真实IP及开放的端口：")
 	for ip := range resultSet {
 		fmt.Println("-", ip)
 	}
@@ -229,12 +229,12 @@ func loadFofaConfig() (*FofaConfig, error) {
 	return cfg, err
 }
 
-func Query(encodedQuery string, field ...string) []string {
+func Query(encodedQuery string, fields ...string) []string {
 	client := resty.New()
 	var result FofaResponse
 	f := ""
-	if len(field) > 0 {
-		f = field[0]
+	if len(fields) > 0 {
+		f = fields[0]
 	}
 
 	_, err := client.R().
