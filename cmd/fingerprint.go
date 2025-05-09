@@ -57,6 +57,6 @@ func wappalyzerAnalyze(url string) {
 	}
 }
 func init() {
-	fingerprintCmd.Flags().StringVarP(&targetURL, "url", "u", "", "targetURL（eg: https://example.com）")
+	fingerprintCmd.Flags().StringVarP(&targetURL, "url", "u", "", "targetURL, eg: https://example.com")
 	rootCmd.AddCommand(fingerprintCmd)
 }
