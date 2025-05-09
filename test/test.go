@@ -1,36 +1,24 @@
-package test
+package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 
-	"github.com/go-resty/resty/v2"
+	wappalyzer "github.com/projectdiscovery/wappalyzergo"
 )
 
 func main() {
-	client := resty.New()
-	param := map[string]string{"k": "v"}
-	resp, err := client.R().
-		SetQueryParams(param).
-		SetHeader("Accept", "application/json").
-		Get("https://httpbin.org/get")
-
+	resp, err := http.DefaultClient.Get("https://r3tr0y.github.io")
 	if err != nil {
 		log.Fatal(err)
 	}
-	var result map[string]interface{}
-	err = json.Unmarshal(resp.Body(), &result)
-	if err != nil {
-		log.Fatalf("JSON解析失败: %v", err)
-	}
+	data, _ := io.ReadAll(resp.Body) // Ignoring error for example
 
-	// 访问已知字段
-	fmt.Printf("请求来源IP: %v\n", result["origin"])
-	fmt.Printf("请求URL: %v\n", result["url"])
-	for k, v := range result["headers"].(map[string]interface{}) {
-		fmt.Println(k + ": " + v.(string))
-	}
+	wappalyzerClient, err := wappalyzer.New()
+	fingerprints := wappalyzerClient.Fingerprint(resp.Header, data)
+	fmt.Printf("%v\n", fingerprints)
 
-	fmt.Println(resp.String())
+	// Output: map[Acquia Cloud Platform:{} Amazon EC2:{} Apache:{} Cloudflare:{} Drupal:{} PHP:{} Percona:{} React:{} Varnish:{}]
 }

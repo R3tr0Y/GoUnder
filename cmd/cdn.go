@@ -62,10 +62,10 @@ var cfg *FofaConfig
 
 var cdnCmd = &cobra.Command{
 	Use:   "cdn",
-	Short: "尝试识别隐藏在CDN后的真实IP",
+	Short: "Seek true IP behind CDN servers.",
 	Run: func(cmd *cobra.Command, args []string) {
 		if targetURL == "" {
-			fmt.Println("❗ 请使用 -u 指定目标 URL")
+			fmt.Println("❗  use -u for target URL")
 			_ = cmd.Usage()
 			os.Exit(1)
 		}
@@ -77,10 +77,10 @@ func cdnLookup(input string) {
 	var err error
 	cfg, err = loadFofaConfig()
 	if err != nil {
-		fmt.Println("配置文件读取失败:", err)
+		fmt.Println("Read config file error:", err)
 		os.Exit(1)
 	}
-	fmt.Println("fofa account loaded:", cfg.Email)
+	fmt.Println("Fofa account loaded:", cfg.Email)
 
 	patterns := []string{"host", "title", "icon"}
 	if pattern != "" {
@@ -101,7 +101,7 @@ func cdnLookup(input string) {
 		}
 	}
 
-	fmt.Println("\n✅ 找到以下可能的真实IP及开放的端口：")
+	fmt.Println("\n✅ Promising true IP & Ports found: ")
 	for ip := range resultSet {
 		fmt.Println("-", ip)
 	}
