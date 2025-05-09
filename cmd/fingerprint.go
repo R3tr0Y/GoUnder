@@ -26,7 +26,7 @@ var fingerprintCmd = &cobra.Command{
 }
 
 func fingerprintLookup(url string) {
-	fmt.Println("Automatically using wappalyzer...")
+	fmt.Println("Automatically using wappalyzergo...")
 	wappalyzerAnalyze(url)
 
 }
@@ -48,7 +48,7 @@ func wappalyzerAnalyze(url string) {
 		if len(fingerprints) > 0 {
 			fmt.Println("\n✅ Website fingerprints found:")
 			for fingerprint := range fingerprints {
-				fmt.Printf("%v\n", fingerprint)
+				fmt.Printf("- %v\n", fingerprint)
 			}
 		} else {
 			fmt.Println("No website fingerprints found!")

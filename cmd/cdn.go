@@ -23,7 +23,7 @@ type FofaResponse struct {
 	Error   bool            `json:"error"`
 	Results [][]string      `json:"-"`
 	Msg     string          `json:"errmsg"`
-	raw     json.RawMessage `json:"results"`
+	Raw     json.RawMessage `json:"results"`
 }
 
 func (f *FofaResponse) UnmarshalJSON(data []byte) error {
@@ -53,7 +53,7 @@ func (f *FofaResponse) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	return fmt.Errorf("无法解析 results 字段: %s", string(aux.Results))
+	return fmt.Errorf("cannot unserialize results field: %s", string(aux.Results))
 }
 
 var targetURL string
@@ -182,7 +182,7 @@ func get_titles(url string) ([]string, error) {
 	}
 
 	if len(titles) == 0 {
-		return nil, fmt.Errorf("未能获取任何有效的 title")
+		return nil, fmt.Errorf("cannot get valid website title")
 	}
 
 	return titles, nil
@@ -273,7 +273,7 @@ func Query(encodedQuery string, fields ...string) []string {
 }
 
 func init() {
-	cdnCmd.Flags().StringVarP(&targetURL, "url", "u", "", "目标URL（如：https://example.com）")
+	cdnCmd.Flags().StringVarP(&targetURL, "url", "u", "", "targetURL, eg:https://example.com")
 	cdnCmd.Flags().StringVarP(&pattern, "pattern", "p", "", "[host | title | icon], default: all")
 	rootCmd.AddCommand(cdnCmd)
 }
