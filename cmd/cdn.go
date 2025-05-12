@@ -4,7 +4,9 @@ import (
 	"GoUnder/utils"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -58,7 +60,7 @@ func (f *FofaResponse) UnmarshalJSON(data []byte) error {
 
 var targetURL string
 var pattern string
-var cfg *FofaConfig
+var fofaCfg *FofaConfig
 
 var cdnCmd = &cobra.Command{
 	Use:   "cdn",
@@ -75,12 +77,13 @@ var cdnCmd = &cobra.Command{
 
 func cdnLookup(input string) {
 	var err error
-	cfg, err = loadFofaConfig()
+	fofaCfg, err = loadFofaConfig()
 	if err != nil {
-		fmt.Println("Read config file error:", err)
-		os.Exit(1)
+		// fmt.Println("Read config file error:", err)
+		// os.Exit(1)
+		log.Fatal(err)
 	}
-	fmt.Println("Fofa account loaded:", cfg.Email)
+	fmt.Println("Fofa account loaded:", fofaCfg.Email)
 
 	patterns := []string{"host", "title", "icon"}
 	if pattern != "" {
@@ -100,11 +103,15 @@ func cdnLookup(input string) {
 			}
 		}
 	}
-
-	fmt.Println("\n✅ Promising true IP & Ports found: ")
-	for ip := range resultSet {
-		fmt.Println("-", ip)
+	if len(resultSet) > 0 {
+		fmt.Println("\n✅ Promising true IP & Ports found: ")
+		for ip := range resultSet {
+			fmt.Println("-", ip)
+		}
+	} else {
+		fmt.Println("\nCould not find possible IP.")
 	}
+
 }
 
 func get_queries(p string, input string) ([]string, []string) {
@@ -126,7 +133,7 @@ func get_queries(p string, input string) ([]string, []string) {
 	case "icon":
 		iconHash, err := getFaviconHash(input)
 		if err != nil {
-			fmt.Println("获取 icon_hash 失败:", err)
+			fmt.Println("get icon_hash failed:", err)
 			break
 		}
 		fmt.Println("Favicon hash:", iconHash)
@@ -220,13 +227,36 @@ func extractHost(raw string) string {
 }
 
 func loadFofaConfig() (*FofaConfig, error) {
-	path := filepath.Join("configs", "fofa.json")
+	configDir := "configs"
+	filename := "fofa.json"
+	path := filepath.Join(configDir, filename)
 	data, err := os.ReadFile(path)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			// 如果文件不存在，创建目录和文件
+			log.Println("Config file not found, creating config file...")
+
+			// 确保目录存在
+			if err := os.MkdirAll(configDir, 0755); err != nil {
+				return nil, fmt.Errorf("creating config failed: %w", err)
+			}
+
+			// 默认配置
+			defaultCfg := FofaConfig{Email: "", Key: ""}
+			defaultData, _ := json.MarshalIndent(defaultCfg, "", "  ")
+
+			// 写入文件
+			if err := os.WriteFile(path, defaultData, 0644); err != nil {
+				return nil, fmt.Errorf("writing config file failed: %w", err)
+			}
+
+			log.Printf("Config file created: %s\nPlease complete the config file", path)
+			os.Exit(1)
+		}
 		return nil, err
 	}
-	err = json.Unmarshal(data, &cfg)
-	return cfg, err
+	err = json.Unmarshal(data, &fofaCfg)
+	return fofaCfg, err
 }
 
 func Query(encodedQuery string, fields ...string) []string {
@@ -239,8 +269,8 @@ func Query(encodedQuery string, fields ...string) []string {
 
 	_, err := client.R().
 		SetQueryParams(map[string]string{
-			"email":   cfg.Email,
-			"key":     cfg.Key,
+			"email":   fofaCfg.Email,
+			"key":     fofaCfg.Key,
 			"qbase64": encodedQuery,
 			"size":    "100",
 			"fields":  f,
@@ -249,12 +279,12 @@ func Query(encodedQuery string, fields ...string) []string {
 		Get("https://fofa.info/api/v1/search/all")
 
 	if err != nil {
-		fmt.Println("请求 FOFA API 失败:", err)
+		fmt.Println("request FOFA API failed:", err)
 		return nil
 	}
 
 	if result.Error {
-		fmt.Printf("FOFA 返回错误: %s\n", result.Msg)
+		fmt.Printf("FOFA return error: %s\n", result.Msg)
 		return nil
 	}
 

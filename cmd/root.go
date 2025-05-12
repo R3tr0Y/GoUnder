@@ -6,7 +6,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "gounder",
-	Short: "GoUnder 是一个用Go编写的安全工具，模拟gobuster风格",
+	Short: "GoUnder is a tool for pre-penetration built by go",
 }
 
 func Execute() {
