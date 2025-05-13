@@ -109,7 +109,7 @@ func cdnLookup(input string) {
 			fmt.Println("-", ip)
 		}
 	} else {
-		fmt.Println("\nCould not find possible IP.")
+		fmt.Println("\n❌ Could not find possible IP.")
 	}
 
 }
@@ -203,16 +203,6 @@ func getFaviconHash(input string) (string, error) {
 
 	// 下载 favicon
 	favURL := url + "/favicon.ico"
-	// client := resty.New()
-	// resp, err := client.R().Get(favURL)
-	// if err != nil {
-	// 	// fallback to https
-	// 	favURL = strings.Replace(favURL, "http://", "https://", 1)
-	// 	resp, err = client.R().Get(favURL)
-	// 	if err != nil {
-	// 		return "", fmt.Errorf("无法获取 favicon.ico: %v", err)
-	// 	}
-	// }
 
 	hash, _ := utils.GetIconHashFromURL(favURL)
 	fmt.Println(hash)

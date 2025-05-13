@@ -62,7 +62,7 @@ func wappalyzerAnalyze(url string) {
 				fmt.Printf("- %v\n", fingerprint)
 			}
 		} else {
-			fmt.Println("No website fingerprints found!")
+			fmt.Println("❌ No website fingerprints found!")
 		}
 
 	}
@@ -93,9 +93,6 @@ func whatcmdAnalyze(url string) {
 
 	if err != nil {
 		log.Fatalf("request whatcms failed: %v", err)
-
-	} else {
-		fmt.Println("\n✅ Website fingerprints found in whatcms: ")
 	}
 	var result map[string]interface{}
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
@@ -108,6 +105,7 @@ func whatcmdAnalyze(url string) {
 	}
 	// 遍历 results 并输出格式化信息
 	if len(results) > 0 {
+		fmt.Println("\n✅ Website fingerprints found in whatcms: ")
 		for _, item := range results {
 			obj, ok := item.(map[string]interface{})
 			if !ok {
@@ -134,7 +132,7 @@ func whatcmdAnalyze(url string) {
 			fmt.Println(output)
 		}
 	} else {
-		fmt.Println("No website fingerprints found!")
+		fmt.Println("❌ No website fingerprints found!")
 	}
 
 }
