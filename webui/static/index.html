@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>网站分析工具</title>
+  <link rel="stylesheet" href="static/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>网站分析工具</h1>
+      <p>输入网址，绕过 CDN，获取真实 IP 和网站架构信息</p>
+    </header>
+
+    <div class="input-section">
+      <input type="text" id="website" placeholder="输入网址 (如：www.example.com)">
+      <button onclick="analyzeWebsite()">分析</button>
+    </div>
+
+    <div class="result-section">
+      <div id="ip-result" class="result-box">
+        <h3>真实 IP 和云服务</h3>
+        <p id="real-ip">正在加载...</p>
+        <p id="cloud-service">正在加载...</p>
+      </div>
+
+      <div id="fingerprint-result" class="result-box">
+        <h3>网站架构和中间件</h3>
+        <p id="website-architecture">正在加载...</p>
+        <p id="middleware">正在加载...</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="static/script.js"></script>
+</body>
+</html>

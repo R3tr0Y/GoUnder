@@ -98,7 +98,7 @@ func cdnLookup(input string) {
 			fmt.Println("Query string:", queries)
 		}
 		for _, enc := range encoded {
-			for _, ip := range Query(enc, "ip,port,host") {
+			for _, ip := range Query(enc, "ip,port,host,org,country,region,city") {
 				resultSet[ip] = true
 			}
 		}
