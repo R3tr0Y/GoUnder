@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -29,16 +30,15 @@ func startWebui(host string, port string) {
 
 	api := router.Group("/api")
 	{
-		api.GET("/hello", helloHandler)
-		api.GET("/time", timeHandler)
-		api.GET("/analyze", analyzeHandler)
+		api.GET("/cdn", cdnHandler)
+		api.GET("/fingerprint", fpHandler)
 	}
 	server := &http.Server{
 		Addr:         host + ":" + port,
 		Handler:      router,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  15 * time.Second,
+		ReadTimeout:  100 * time.Second,
+		WriteTimeout: 100 * time.Second,
+		IdleTimeout:  150 * time.Second,
 	}
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -52,18 +52,7 @@ func startWebui(host string, port string) {
 	<-quit
 }
 
-func helloHandler(c *gin.Context) {
-	name := c.DefaultQuery("name", "World")
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello, " + name + "!",
-	})
-}
-func timeHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"time": time.Now().Format(time.RFC3339),
-	})
-}
-func analyzeHandler(c *gin.Context) {
+func cdnHandler(c *gin.Context) {
 	website := c.DefaultQuery("website", "")
 	if website == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -71,19 +60,65 @@ func analyzeHandler(c *gin.Context) {
 		})
 		return
 	}
+	pattern = c.DefaultQuery("p", "")
 
 	// 调用封装的函数获取真实 IP 和云服务
-	realIP, cloudService := fmt.Println(website)
+	cdnLookupResult := cdnLookup(website)
+	var results []gin.H
+	for key := range cdnLookupResult {
+		parts := strings.Split(key, ",")
+		if len(parts) != 7 {
+			continue // 跳过格式不正确的键
+		}
 
+		// 创建 JSON 结构
+		jsonData := gin.H{
+			"ip":      parts[0],
+			"port":    parts[1],
+			"host":    parts[2],
+			"org":     parts[3],
+			"country": parts[4],
+			"region":  parts[5],
+			"city":    parts[6],
+		}
+
+		results = append(results, jsonData)
+	}
+	// var host, org string
 	// 调用封装的函数获取网站指纹
-	architecture, middleware := fmt.Println(website)
+	// architecture, middleware := fmt.Println(website)
 
 	c.JSON(http.StatusOK, gin.H{
-		"ip":           realIP,
-		"cloudService": cloudService,
-		"architecture": architecture,
-		"middleware":   middleware,
+		"cdnData": results,
 	})
+}
+
+func fpHandler(c *gin.Context) {
+	website := c.DefaultQuery("website", "")
+	if website == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Website is required",
+		})
+		return
+	}
+	engine = c.DefaultQuery("e", "")
+
+	original := fingerprintLookup(website, engine)
+	result := make(map[string]string)
+	for key := range original {
+		if strings.Contains(key, ":") {
+			parts := strings.SplitN(key, ":", 2)
+			result[parts[0]] = parts[1]
+		} else {
+			result[key] = ""
+		}
+	}
+
+	// 返回 JSON 响应
+	c.JSON(http.StatusOK, gin.H{
+		"techData": result,
+	})
+
 }
 
 func init() {

@@ -1,39 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>网站分析工具</title>
-  <link rel="stylesheet" href="static/styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>网站分析工具</h1>
-      <p>输入网址，绕过 CDN，获取真实 IP 和网站架构信息</p>
-    </header>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GoUnder Web UI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <style>
+    .tab-active {
+      border-bottom: 2px solid #2563EB;
+      color: #2563EB;
+    }
 
-    <div class="input-section">
-      <input type="text" id="website" placeholder="输入网址 (如：www.example.com)">
-      <button onclick="analyzeWebsite()">分析</button>
+    /* Custom scrollbar for better desktop UX */
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e0;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background-color: #edf2f7;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col items-center p-4">
+  <div class="w-full max-w-6xl bg-white p-6 rounded-xl shadow-lg">
+    <h1 class="text-3xl font-semibold mb-6 text-center">GoUnder Web UI</h1>
+
+    <!-- Tabs -->
+    <div class="flex border-b mb-4">
+      <button class="tab px-4 py-2 text-lg font-medium focus:outline-none" data-tab="cdn">CDN 分析</button>
+      <button class="tab px-4 py-2 text-lg font-medium focus:outline-none" data-tab="fingerprint">指纹识别</button>
     </div>
 
-    <div class="result-section">
-      <div id="ip-result" class="result-box">
-        <h3>真实 IP 和云服务</h3>
-        <p id="real-ip">正在加载...</p>
-        <p id="cloud-service">正在加载...</p>
-      </div>
+    <!-- CDN Tab Content -->
+    <div id="tab-cdn" class="tab-content">
+      <form id="analyzeForm" class="space-y-4">
+        <div>
+          <label for="website" class="block font-medium">Website URL</label>
+          <input type="text" id="website" name="website" required placeholder="e.g. www.example.com"
+                 class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
 
-      <div id="fingerprint-result" class="result-box">
-        <h3>网站架构和中间件</h3>
-        <p id="website-architecture">正在加载...</p>
-        <p id="middleware">正在加载...</p>
-      </div>
+        <div>
+          <label for="pattern" class="block font-medium">Pattern</label>
+          <select id="pattern" name="pattern"
+                  class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All</option>
+            <option value="host">Host</option>
+            <option value="title">Title</option>
+            <option value="icon">Icon</option>
+          </select>
+        </div>
+
+        <button type="submit"
+                class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-md hover:bg-blue-700 transition">
+          Analyze
+        </button>
+      </form>
+
+      <div id="result" class="mt-6 overflow-x-auto custom-scrollbar"></div>
+    </div>
+
+    <!-- Fingerprint Tab Content -->
+    <div id="tab-fingerprint" class="tab-content hidden">
+      <form id="fingerprintForm" class="space-y-4">
+        <div>
+          <label for="fp-website" class="block font-medium">Website URL</label>
+          <input type="text" id="fp-website" name="fp-website" required placeholder="e.g. www.example.com"
+                 class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+        </div>
+        <button type="submit"
+                class="w-full bg-purple-600 text-white font-medium py-2 px-4 rounded-md hover:bg-purple-700 transition">
+          Identify Fingerprint
+        </button>
+      </form>
+      <div id="fp-result" class="mt-6"></div>
     </div>
   </div>
 
-  <script src="static/script.js"></script>
+  <script>
+    // Tab logic
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        tab.classList.add('tab-active');
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+      });
+    });
+
+    // CDN Analyze Form
+    document.getElementById("analyzeForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const website = document.getElementById("website").value.trim();
+      const pattern = document.getElementById("pattern").value;
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "<p class='text-gray-600'>Loading...</p>";
+
+      try {
+        const response = await fetch(`/api/cdn?website=${encodeURIComponent(website)}&p=${encodeURIComponent(pattern)}`);
+        const data = await response.json();
+
+        if (data.error) {
+          resultDiv.innerHTML = `<p class='text-red-600'>${data.error}</p>`;
+          return;
+        }
+
+        if (!data.cdnData || data.cdnData.length === 0) {
+          resultDiv.innerHTML = `<p class='text-yellow-600'>No data found.</p>`;
+          return;
+        }
+
+        let table = `<div class="overflow-x-auto">
+                      <table class="min-w-full border-collapse mt-4 text-sm whitespace-nowrap">
+                        <thead>
+                          <tr class="bg-blue-100">
+                            <th class="border px-4 py-2">IP</th>
+                            <th class="border px-4 py-2">Port</th>
+                            <th class="border px-4 py-2">Host</th>
+                            <th class="border px-4 py-2">Org</th>
+                            <th class="border px-4 py-2">Country</th>
+                            <th class="border px-4 py-2">Region</th>
+                            <th class="border px-4 py-2">City</th>
+                          </tr>
+                        </thead>
+                        <tbody>`;
+
+        data.cdnData.forEach(entry => {
+          table += `<tr class="hover:bg-gray-100">
+                      <td class="border px-4 py-2">${entry.ip}</td>
+                      <td class="border px-4 py-2">${entry.port}</td>
+                      <td class="border px-4 py-2">${entry.host}</td>
+                      <td class="border px-4 py-2">${entry.org}</td>
+                      <td class="border px-4 py-2">${entry.country}</td>
+                      <td class="border px-4 py-2">${entry.region}</td>
+                      <td class="border px-4 py-2">${entry.city}</td>
+                    </tr>`;
+        });
+
+        table += `</tbody></table></div>`;
+        resultDiv.innerHTML = table;
+
+      } catch (err) {
+        resultDiv.innerHTML = `<p class='text-red-600'>Error: ${err.message}</p>`;
+      }
+    });
+
+    // Placeholder for fingerprint form
+    document.getElementById("fingerprintForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const website = document.getElementById("fp-website").value.trim();
+      const resultDiv = document.getElementById("fp-result");
+      resultDiv.innerHTML = `<p class='text-gray-500'>Feature coming soon... API not yet connected for: ${website}</p>`;
+    });
+  </script>
 </body>
 </html>

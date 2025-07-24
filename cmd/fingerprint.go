@@ -29,19 +29,21 @@ var fingerprintCmd = &cobra.Command{
 	},
 }
 
-func fingerprintLookup(url string, engine string) {
+func fingerprintLookup(url string, engine string) map[string]bool {
 	switch engine {
 	case "":
 		fmt.Println("Automatically using wappalyzergo...")
-		wappalyzerAnalyze(url)
+		return wappalyzerAnalyze(url)
 	case "local":
-		wappalyzerAnalyze(url)
+		return wappalyzerAnalyze(url)
 	case "whatcms":
 		whatcmdAnalyze(url)
+		return nil
 	}
+	return nil
 
 }
-func wappalyzerAnalyze(url string) {
+func wappalyzerAnalyze(url string) map[string]bool {
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		url = "http://" + url
 	}
@@ -54,15 +56,21 @@ func wappalyzerAnalyze(url string) {
 	wappalyzerClient, err := wappalyzer.New()
 	if err != nil {
 		log.Fatal(err)
+		return nil
 	} else {
 		fingerprints := wappalyzerClient.Fingerprint(resp.Header, data)
 		if len(fingerprints) > 0 {
 			fmt.Println("\n✅ Website fingerprints found in local database:")
+			results := make(map[string]bool)
 			for fingerprint := range fingerprints {
 				fmt.Printf("- %v\n", fingerprint)
+				results[fingerprint] = true
 			}
+			fmt.Println(results)
+			return results
 		} else {
 			fmt.Println("❌ No website fingerprints found!")
+			return nil
 		}
 
 	}
@@ -75,7 +83,7 @@ type WhatcmsConfig struct {
 var whatcmsCfg *WhatcmsConfig
 var engine string
 
-func whatcmdAnalyze(url string) {
+func whatcmdAnalyze(url string) []interface{} {
 	whatcmsCfg, err := loadWhatcmsConfig()
 	if err != nil {
 		log.Fatalf("error loading whatcms config.\n")
@@ -131,8 +139,10 @@ func whatcmdAnalyze(url string) {
 
 			fmt.Println(output)
 		}
+		return results
 	} else {
 		fmt.Println("❌ No website fingerprints found!")
+		return nil
 	}
 
 }

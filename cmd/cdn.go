@@ -75,7 +75,7 @@ var cdnCmd = &cobra.Command{
 	},
 }
 
-func cdnLookup(input string) {
+func cdnLookup(input string) map[string]bool {
 	var err error
 	fofaCfg, err = loadFofaConfig()
 	if err != nil {
@@ -108,8 +108,10 @@ func cdnLookup(input string) {
 		for ip := range resultSet {
 			fmt.Println("-", ip)
 		}
+		return resultSet
 	} else {
 		fmt.Println("\n❌ Could not find possible IP.")
+		return nil
 	}
 
 }
@@ -270,6 +272,7 @@ func Query(encodedQuery string, fields ...string) []string {
 
 	if err != nil {
 		fmt.Println("request FOFA API failed:", err)
+		fmt.Println(result)
 		return nil
 	}
 
