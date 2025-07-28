@@ -104,7 +104,7 @@ func cdnLookup(input string) map[string]bool {
 		}
 	}
 	if len(resultSet) > 0 {
-		fmt.Println("\n✅ Promising true IP & Ports found: ")
+		fmt.Println("\n✅ Promising target(s) found: ")
 		for ip := range resultSet {
 			fmt.Println("-", ip)
 		}

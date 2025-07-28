@@ -59,13 +59,12 @@ func wappalyzerAnalyze(url string) map[string]bool {
 	} else {
 		fingerprints := wappalyzerClient.Fingerprint(resp.Header, data)
 		if len(fingerprints) > 0 {
-			fmt.Println("\n✅ Website fingerprints found in local database:")
+			fmt.Println("\n✅ Website fingerprints found in local wappalyzer database:")
 			results := make(map[string]bool)
 			for fingerprint := range fingerprints {
 				fmt.Printf("- %v\n", fingerprint)
 				results[fingerprint] = true
 			}
-			fmt.Println(results)
 			return results
 		} else {
 			fmt.Println("❌ No website fingerprints found!")
@@ -204,6 +203,6 @@ func joinCategories(val interface{}) string {
 
 func init() {
 	fingerprintCmd.Flags().StringVarP(&targetURL, "url", "u", "", "targetURL, eg: https://example.com")
-	fingerprintCmd.Flags().StringVarP(&engine, "engine", "e", "", "engine for analyzing website fingerprints, [local (wappalyzergo) | whatcms | ], default: local")
+	fingerprintCmd.Flags().StringVarP(&engine, "engine", "e", "", "engine for analyzing website fingerprints, [ wappalyzer | whatcms | ], default: wappalyzer")
 	rootCmd.AddCommand(fingerprintCmd)
 }
