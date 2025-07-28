@@ -48,7 +48,7 @@ func wappalyzerAnalyze(url string) map[string]bool {
 	}
 	resp, err := http.DefaultClient.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 	data, _ := io.ReadAll(resp.Body) // Ignoring error for example
 
