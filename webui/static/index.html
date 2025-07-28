@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GoUnder Web UI</title>
+  <title>Website Analyzer</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
   <style>
     .tab-active {
@@ -11,7 +11,6 @@
       color: #2563EB;
     }
 
-    /* Custom scrollbar for better desktop UX */
     .custom-scrollbar::-webkit-scrollbar {
       height: 8px;
     }
@@ -26,7 +25,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col items-center p-4">
   <div class="w-full max-w-6xl bg-white p-6 rounded-xl shadow-lg">
-    <h1 class="text-3xl font-semibold mb-6 text-center">GoUnder Web UI</h1>
+    <h1 class="text-3xl font-semibold mb-6 text-center">Website Analyzer</h1>
 
     <!-- Tabs -->
     <div class="flex border-b mb-4">
@@ -71,12 +70,23 @@
           <input type="text" id="fp-website" name="fp-website" required placeholder="e.g. www.example.com"
                  class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
         </div>
+
+        <div>
+          <label for="fp-engine" class="block font-medium">Analysis Engine</label>
+          <select id="fp-engine" name="fp-engine"
+                  class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <option value="">Default</option>
+            <option value="wappalyzer">Wappalyzer</option>
+            <option value="whatcms">WhatCMS</option>
+          </select>
+        </div>
+
         <button type="submit"
                 class="w-full bg-purple-600 text-white font-medium py-2 px-4 rounded-md hover:bg-purple-700 transition">
           Identify Fingerprint
         </button>
       </form>
-      <div id="fp-result" class="mt-6"></div>
+      <div id="fp-result" class="mt-6 overflow-x-auto custom-scrollbar"></div>
     </div>
   </div>
 
@@ -148,12 +158,52 @@
       }
     });
 
-    // Placeholder for fingerprint form
+    // Fingerprint API logic
     document.getElementById("fingerprintForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const website = document.getElementById("fp-website").value.trim();
+      const engine = document.getElementById("fp-engine").value;
       const resultDiv = document.getElementById("fp-result");
-      resultDiv.innerHTML = `<p class='text-gray-500'>Feature coming soon... API not yet connected for: ${website}</p>`;
+      resultDiv.innerHTML = `<p class='text-gray-600'>Loading...</p>`;
+
+      try {
+        const response = await fetch(`/api/fingerprint?website=${encodeURIComponent(website)}&e=${encodeURIComponent(engine)}`);
+        const data = await response.json();
+
+        if (data.error) {
+          resultDiv.innerHTML = `<p class='text-red-600'>${data.error}</p>`;
+          return;
+        }
+
+        if (!data.techData || data.techData.length === 0) {
+          resultDiv.innerHTML = `<p class='text-yellow-600'>No fingerprint data found.</p>`;
+          return;
+        }
+
+        let table = `<div class="overflow-x-auto">
+                      <table class="min-w-full border-collapse mt-4 text-sm whitespace-nowrap">
+                        <thead>
+                          <tr class="bg-purple-100">
+                            <th class="border px-4 py-2">Technology</th>
+                            <th class="border px-4 py-2">Version</th>
+                            <th class="border px-4 py-2">Description</th>
+                          </tr>
+                        </thead>
+                        <tbody>`;
+
+        data.techData.forEach(entry => {
+          table += `<tr class="hover:bg-gray-100">
+                      <td class="border px-4 py-2">${entry.tech}</td>
+                      <td class="border px-4 py-2">${entry.version}</td>
+                      <td class="border px-4 py-2">${entry.description}</td>
+                    </tr>`;
+        });
+
+        table += `</tbody></table></div>`;
+        resultDiv.innerHTML = table;
+      } catch (err) {
+        resultDiv.innerHTML = `<p class='text-red-600'>Error: ${err.message}</p>`;
+      }
     });
   </script>
 </body>

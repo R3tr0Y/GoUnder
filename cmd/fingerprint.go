@@ -34,7 +34,7 @@ func fingerprintLookup(url string, engine string) map[string]bool {
 	case "":
 		fmt.Println("Automatically using wappalyzergo...")
 		return wappalyzerAnalyze(url)
-	case "local":
+	case "wappalyzer":
 		return wappalyzerAnalyze(url)
 	case "whatcms":
 		return whatcmdAnalyze(url)
