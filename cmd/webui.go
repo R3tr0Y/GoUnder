@@ -146,7 +146,6 @@ func fpHandler(c *gin.Context) {
 	engine = c.DefaultQuery("e", "")
 
 	original := fingerprintLookup(website, engine)
-	fmt.Println(original)
 	parsed := parseTechEntries(original)
 
 	// 返回标准化 JSON 格式
