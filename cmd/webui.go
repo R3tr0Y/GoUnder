@@ -93,6 +93,48 @@ func cdnHandler(c *gin.Context) {
 	})
 }
 
+type TechInfo struct {
+	Tech        string `json:"tech"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+}
+
+// 数据处理函数
+func parseTechEntries(entries map[string]bool) []TechInfo {
+	var result []TechInfo
+
+	for entry := range entries {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+
+		var tech, version, description string
+
+		// 分离 description（逗号部分）
+		parts := strings.SplitN(entry, ",", 2)
+		main := strings.TrimSpace(parts[0])
+		if len(parts) == 2 {
+			description = strings.TrimSpace(parts[1])
+		}
+
+		// 分离 tech 和 version（冒号部分）
+		techParts := strings.SplitN(main, ":", 2)
+		tech = strings.TrimSpace(techParts[0])
+		if len(techParts) == 2 {
+			version = strings.TrimSpace(techParts[1])
+		}
+
+		result = append(result, TechInfo{
+			Tech:        tech,
+			Version:     version,
+			Description: description,
+		})
+	}
+
+	return result
+}
+
 func fpHandler(c *gin.Context) {
 	website := c.DefaultQuery("website", "")
 	if website == "" {
@@ -104,19 +146,12 @@ func fpHandler(c *gin.Context) {
 	engine = c.DefaultQuery("e", "")
 
 	original := fingerprintLookup(website, engine)
-	result := make(map[string]string)
-	for key := range original {
-		if strings.Contains(key, ":") {
-			parts := strings.SplitN(key, ":", 2)
-			result[parts[0]] = parts[1]
-		} else {
-			result[key] = ""
-		}
-	}
+	fmt.Println(original)
+	parsed := parseTechEntries(original)
 
-	// 返回 JSON 响应
+	// 返回标准化 JSON 格式
 	c.JSON(http.StatusOK, gin.H{
-		"techData": result,
+		"techData": parsed,
 	})
 
 }

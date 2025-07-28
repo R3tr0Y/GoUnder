@@ -37,8 +37,7 @@ func fingerprintLookup(url string, engine string) map[string]bool {
 	case "local":
 		return wappalyzerAnalyze(url)
 	case "whatcms":
-		whatcmdAnalyze(url)
-		return nil
+		return whatcmdAnalyze(url)
 	}
 	return nil
 
@@ -83,7 +82,8 @@ type WhatcmsConfig struct {
 var whatcmsCfg *WhatcmsConfig
 var engine string
 
-func whatcmdAnalyze(url string) []interface{} {
+func whatcmdAnalyze(url string) map[string]bool {
+	outcome := make(map[string]bool)
 	whatcmsCfg, err := loadWhatcmsConfig()
 	if err != nil {
 		log.Fatalf("error loading whatcms config.\n")
@@ -136,10 +136,10 @@ func whatcmdAnalyze(url string) []interface{} {
 					output += ", " + categories
 				}
 			}
-
+			outcome[output[2:]] = true
 			fmt.Println(output)
 		}
-		return results
+		return outcome
 	} else {
 		fmt.Println("❌ No website fingerprints found!")
 		return nil
