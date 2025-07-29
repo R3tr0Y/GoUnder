@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -65,8 +64,7 @@ func cdnHandler(c *gin.Context) {
 	// 调用封装的函数获取真实 IP 和云服务
 	cdnLookupResult := cdnLookup(website)
 	var results []gin.H
-	for key := range cdnLookupResult {
-		parts := strings.Split(key, ",")
+	for _, parts := range cdnLookupResult {
 		if len(parts) != 7 {
 			continue // 跳过格式不正确的键
 		}
@@ -84,9 +82,6 @@ func cdnHandler(c *gin.Context) {
 
 		results = append(results, jsonData)
 	}
-	// var host, org string
-	// 调用封装的函数获取网站指纹
-	// architecture, middleware := fmt.Println(website)
 
 	c.JSON(http.StatusOK, gin.H{
 		"cdnData": results,
@@ -99,42 +94,6 @@ type TechInfo struct {
 	Description string `json:"description"`
 }
 
-// 数据处理函数
-func parseTechEntries(entries map[string]bool) []TechInfo {
-	var result []TechInfo
-
-	for entry := range entries {
-		entry = strings.TrimSpace(entry)
-		if entry == "" {
-			continue
-		}
-
-		var tech, version, description string
-
-		// 分离 description（逗号部分）
-		parts := strings.SplitN(entry, ",", 2)
-		main := strings.TrimSpace(parts[0])
-		if len(parts) == 2 {
-			description = strings.TrimSpace(parts[1])
-		}
-
-		// 分离 tech 和 version（冒号部分）
-		techParts := strings.SplitN(main, ":", 2)
-		tech = strings.TrimSpace(techParts[0])
-		if len(techParts) == 2 {
-			version = strings.TrimSpace(techParts[1])
-		}
-
-		result = append(result, TechInfo{
-			Tech:        tech,
-			Version:     version,
-			Description: description,
-		})
-	}
-
-	return result
-}
-
 func fpHandler(c *gin.Context) {
 	website := c.DefaultQuery("website", "")
 	if website == "" {
@@ -144,13 +103,23 @@ func fpHandler(c *gin.Context) {
 		return
 	}
 	engine = c.DefaultQuery("e", "")
-
+	var results []gin.H
 	original := fingerprintLookup(website, engine)
-	parsed := parseTechEntries(original)
+	for _, tech := range original {
+		if len(tech) > 0 {
+			jsonData := gin.H{
+				"tech":        tech["tech"],
+				"version":     tech["version"],
+				"description": tech["description"],
+			}
+			results = append(results, jsonData)
+		}
+
+	}
 
 	// 返回标准化 JSON 格式
 	c.JSON(http.StatusOK, gin.H{
-		"techData": parsed,
+		"techData": results,
 	})
 
 }

@@ -75,7 +75,7 @@ var cdnCmd = &cobra.Command{
 	},
 }
 
-func cdnLookup(input string) map[string]bool {
+func cdnLookup(input string) [][]string {
 	var err error
 	fofaCfg, err = loadFofaConfig()
 	if err != nil {
@@ -90,7 +90,7 @@ func cdnLookup(input string) map[string]bool {
 		patterns = []string{pattern}
 	}
 
-	resultSet := make(map[string]bool)
+	resultSet := make([][]string, 0)
 
 	for _, p := range patterns {
 		queries, encoded := get_queries(p, input)
@@ -99,14 +99,16 @@ func cdnLookup(input string) map[string]bool {
 		}
 		for _, enc := range encoded {
 			for _, ip := range Query(enc, "ip,port,host,org,country,region,city") {
-				resultSet[ip] = true
+				if len(ip) > 0 {
+					resultSet = append(resultSet, ip)
+				}
 			}
 		}
 	}
 	if len(resultSet) > 0 {
 		fmt.Println("\n✅ Promising target(s) found: ")
-		for ip := range resultSet {
-			fmt.Println("-", ip)
+		for _, ip := range resultSet {
+			fmt.Println("-", strings.Join(ip, ", "))
 		}
 		return resultSet
 	} else {
@@ -160,7 +162,7 @@ func get_titles(url string) ([]string, error) {
 	// 调用 FOFA 查询 title 字段
 	results := Query(encodedQuery, "title")
 	for _, title := range results {
-		trimmed := strings.TrimSpace(title)
+		trimmed := strings.TrimSpace(strings.Join(title, ""))
 		if trimmed != "" && !seen[trimmed] {
 			titles = append(titles, trimmed)
 			seen[trimmed] = true
@@ -207,7 +209,6 @@ func getFaviconHash(input string) (string, error) {
 	favURL := url + "/favicon.ico"
 
 	hash, _ := utils.GetIconHashFromURL(favURL)
-	fmt.Println(hash)
 	return fmt.Sprintf("%v", hash), nil // FOFA 使用的是有符号 int32
 }
 func extractHost(raw string) string {
@@ -251,7 +252,7 @@ func loadFofaConfig() (*FofaConfig, error) {
 	return fofaCfg, err
 }
 
-func Query(encodedQuery string, fields ...string) []string {
+func Query(encodedQuery string, fields ...string) [][]string {
 	client := resty.New()
 	var result FofaResponse
 	f := ""
@@ -281,18 +282,19 @@ func Query(encodedQuery string, fields ...string) []string {
 		return nil
 	}
 
-	results := make(map[string]bool)
+	results := make([][]string, 0)
 	for _, entry := range result.Results {
 		if len(entry) > 0 && entry[0] != "" {
-			results[strings.Join(entry, ", ")] = true
+			results = append(results, entry)
 		}
 	}
+	return results
 
-	var unique []string
-	for ip := range results {
-		unique = append(unique, ip)
-	}
-	return unique
+	// var unique []string
+	// for ip := range results {
+	// 	unique = append(unique, ip)
+	// }
+	// return unique
 }
 
 func init() {

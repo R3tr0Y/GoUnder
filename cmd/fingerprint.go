@@ -29,10 +29,11 @@ var fingerprintCmd = &cobra.Command{
 	},
 }
 
-func fingerprintLookup(url string, engine string) map[string]bool {
+func fingerprintLookup(url string, engine string) []map[string]string {
 	switch engine {
 	case "":
 		fmt.Println("Automatically using wappalyzergo...")
+
 		return wappalyzerAnalyze(url)
 	case "wappalyzer":
 		return wappalyzerAnalyze(url)
@@ -42,7 +43,7 @@ func fingerprintLookup(url string, engine string) map[string]bool {
 	return nil
 
 }
-func wappalyzerAnalyze(url string) map[string]bool {
+func wappalyzerAnalyze(url string) []map[string]string { //[]map[string]string
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		url = "http://" + url
 	}
@@ -60,10 +61,9 @@ func wappalyzerAnalyze(url string) map[string]bool {
 		fingerprints := wappalyzerClient.Fingerprint(resp.Header, data)
 		if len(fingerprints) > 0 {
 			fmt.Println("\n✅ Website fingerprints found in local wappalyzer database:")
-			results := make(map[string]bool)
+			results := convertTechMap(fingerprints)
 			for fingerprint := range fingerprints {
 				fmt.Printf("- %v\n", fingerprint)
-				results[fingerprint] = true
 			}
 			return results
 		} else {
@@ -81,8 +81,8 @@ type WhatcmsConfig struct {
 var whatcmsCfg *WhatcmsConfig
 var engine string
 
-func whatcmdAnalyze(url string) map[string]bool {
-	outcome := make(map[string]bool)
+func whatcmdAnalyze(url string) []map[string]string {
+	outcome := []map[string]string{}
 	whatcmsCfg, err := loadWhatcmsConfig()
 	if err != nil {
 		log.Fatalf("error loading whatcms config.\n")
@@ -135,7 +135,7 @@ func whatcmdAnalyze(url string) map[string]bool {
 					output += ", " + categories
 				}
 			}
-			outcome[output[2:]] = true
+			outcome = append(outcome, map[string]string{"tech": name, "version": version, "description": categories})
 			fmt.Println(output)
 		}
 		return outcome
@@ -199,6 +199,28 @@ func joinCategories(val interface{}) string {
 		}
 	}
 	return strings.Join(cats, " ")
+}
+
+func convertTechMap(input map[string]struct{}) []map[string]string {
+	result := []map[string]string{}
+
+	for key := range input {
+		entry := map[string]string{
+			"tech":        "",
+			"version":     "",
+			"description": "",
+		}
+
+		// 判断是否包含冒号（表示版本信息）
+		if parts := strings.SplitN(key, ":", 2); len(parts) == 2 {
+			entry["tech"] = strings.TrimSpace(parts[0])
+			entry["version"] = strings.TrimSpace(parts[1])
+		} else {
+			entry["tech"] = strings.TrimSpace(key)
+		}
+		result = append(result, entry)
+	}
+	return result
 }
 
 func init() {
