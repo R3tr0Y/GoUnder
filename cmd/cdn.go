@@ -7,13 +7,16 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/html"
 )
 
 type FofaConfig struct {
@@ -198,17 +201,111 @@ func get_titles(url string) ([]string, error) {
 
 	return titles, nil
 }
+
+// Fetches and parses the HTML to find icon links
+func extractIconLinks(baseURL string) ([]string, error) {
+	resp, err := http.Get(baseURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var icons []string
+	z := html.NewTokenizer(resp.Body)
+
+	for {
+		tt := z.Next()
+		switch tt {
+		case html.ErrorToken:
+			return icons, nil
+		case html.StartTagToken, html.SelfClosingTagToken:
+			t := z.Token()
+			if t.Data == "link" {
+				var href, rel string
+				for _, a := range t.Attr {
+					if strings.ToLower(a.Key) == "rel" {
+						rel = strings.ToLower(a.Val)
+					}
+					if strings.ToLower(a.Key) == "href" {
+						href = a.Val
+					}
+				}
+				if strings.Contains(rel, "icon") && href != "" {
+					icons = append(icons, href)
+				}
+			}
+		}
+	}
+}
+
+// Convert relative URLs to absolute
+func resolveURL(base string, ref string) string {
+	u, err := url.Parse(ref)
+	if err != nil {
+		return ref
+	}
+	baseParsed, err := url.Parse(base)
+	if err != nil {
+		return ref
+	}
+	return baseParsed.ResolveReference(u).String()
+}
+
+// Check if icon URL returns 200 OK
+func isValidURL(iconURL string) bool {
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Head(iconURL)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
+}
+
+// Main function to find the best valid icon
+func GetValidFaviconURL(pageURL string) (string, error) {
+	icons, err := extractIconLinks(pageURL)
+	if err != nil {
+		return "", err
+	}
+
+	// Add default /favicon.ico to candidates
+	icons = append(icons, "/favicon.ico")
+
+	checked := make(map[string]bool)
+
+	for _, icon := range icons {
+		iconURL := resolveURL(pageURL, icon)
+		if checked[iconURL] {
+			continue
+		}
+		checked[iconURL] = true
+
+		if isValidURL(iconURL) {
+			return iconURL, nil
+		}
+	}
+
+	return "", fmt.Errorf("no valid favicon found")
+}
 func getFaviconHash(input string) (string, error) {
-	host := extractHost(input)
-	url := host
+	// host := extractHost(input)
+	url := input
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		url = "http://" + url
 	}
 
 	// 下载 favicon
-	favURL := url + "/favicon.ico"
-
-	hash, _ := utils.GetIconHashFromURL(favURL)
+	favURL, err := GetValidFaviconURL(url)
+	if err != nil {
+		return "", err
+	}
+	hash, err := utils.GetIconHashFromURL(favURL)
+	if err != nil {
+		return "", err
+	}
 	return fmt.Sprintf("%v", hash), nil // FOFA 使用的是有符号 int32
 }
 func extractHost(raw string) string {
