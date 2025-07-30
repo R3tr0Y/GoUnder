@@ -1,4 +1,5 @@
 deploy.sh
+.gitignore
 configs/*
 .DS_Store
 结题报告.md
