@@ -1,31 +1,164 @@
 # GoUnder
 
-GoUnder 是一款由go语言开发的前期渗透信息搜集工具，目前主要由两个模块组成：fingerprint 和 cdn 模块。
+**GoUnder** 是一款由 Go 语言开发的自动化信息搜集与 CDN 绕过工具，适用于网络安全实战中的目标溯源与指纹识别。工具支持命令行与 Web UI 双模式操作，适用于渗透测试、红队演练与执法取证等场景。
 
-1. fingeprint
+---
 
-   用法：
+## 🧠 项目功能
 
-   ```
-   GoUnder fingerprint -u <URL> [flag]
-   ```
+- 🎯 **绕过 CDN**：通过 FOFA 数据接口，结合 `host`、`title` 与 `favicon hash` 策略定位目标真实 IP。
+- 🔍 **网站指纹识别**：集成 Wappalyzer 本地库与 WhatCMS API，实现网站技术栈探测。
+- 🌐 **图形界面支持**：提供 Web UI 页面，零门槛查询 CDN 与指纹信息。
+- 🧩 **模块化架构**：可扩展性强，支持更多信息源、指纹引擎与展示方式。
 
-   该模块用于自动分析网站的指纹，目前有两个引擎可供选择：wappalyzergo、whatcms。wappalyzergo是利用开源的特征库在本地识别，主要通过请求头、cookie、网站前端代码的内容对指纹特征库正则匹配；whatcms引擎，是利用whatcms提供的api在线查询网站的技术指纹，需联网使用，并且要自己配置API key。
+---
 
-2. cdn
+## ⚙️ 使用方法
 
-   用法
+### 🔧 编译与运行
 
-   ```
-   GoUnder cdn -u <URL> [flag]
-   ```
+```bash
+git clone https://github.com/yourname/GoUnder.git
+cd GoUnder
+go run main.go
+```
 
-   该模块用于自动绕过存在CDN防护的网站，寻找网站的真实IP地址，主要通过FOFA网络空间搜索引擎的语法技巧自动化分析，需要配置FOFA账号的api key，并且联网使用。拥有三种绕过方案，host、title、icon。
+或构建可执行文件：
 
-3. webui
-   用法
+```
+go build -o gounder main.go
+./gounder --help
+```
 
-   ```
-   GoUnder webui [-u host -p port]
-   ```
-   该命令用于启动webui页面，为用户提供可视化操作
+或构建可执行文件：
+
+```
+go build -o gounder main.go
+./gounder --help
+```
+
+### 🔌 CDN 绕过命令示例
+
+```
+go run main.go cdn -u http://hscks.com/ -p icon
+go run main.go cdn -u 911blw.com -p title
+```
+
+支持参数：
+
+| 参数 | 说明                                |
+| ---- | ----------------------------------- |
+| `-u` | 目标网站 URL                        |
+| `-p` | 查询策略：`host` / `title` / `icon` |
+
+------
+
+### 🧬 指纹识别命令示例
+
+```
+go run main.go fingerprint -u http://example.com -e wappalyzer
+go run main.go fingerprint -u http://example.com -e whatcms
+```
+
+支持引擎：
+
+- `wappalyzer`：本地识别，速度快，依赖少
+- `whatcms`：云端识别，支持更多 CMS 数据
+
+------
+
+### 🌐 启动 Web UI（默认端口 8080）
+
+```
+go run main.go webui -p 8080 -u 0.0.0.0
+```
+
+访问地址：
+
+```
+http://localhost:8080/
+```
+
+可在页面中进行：
+
+- CDN 溯源信息查询
+- 技术栈指纹识别
+- JSON 数据查看与复制
+
+------
+
+## 📂 配置说明
+
+请先配置以下 JSON 文件于 `configs/` 目录：
+
+### FOFA 配置（`configs/fofa.json`）
+
+```
+{
+  "email": "your_email@example.com",
+  "key": "your_fofa_api_key"
+}
+```
+
+### WhatCMS 配置（`configs/whatcms.json`）
+
+```
+{
+  "key": "your_whatcms_api_key"
+}
+```
+
+------
+
+## 🛠 依赖环境
+
+- Go 1.18+
+- 第三方依赖：
+
+```
+go install github.com/projectdiscovery/wappalyzergo
+go get github.com/go-resty/resty/v2
+go get github.com/spf13/cobra
+go get github.com/gin-gonic/gin
+```
+
+---
+
+## 📈 项目结构
+
+```
+GoUnder/
+├── cmd/
+│   ├── cdn.go             # CDN绕过模块
+│   ├── fingerprint.go     # 指纹识别模块
+│   ├── webui.go           # Web UI模块
+├── configs/               # 配置文件目录
+├── webui/static/          # 前端资源（静态页面）
+├── utils/                 # 工具函数（如icon hash计算）
+└── main.go                # 项目入口
+```
+
+------
+
+## 🧭 下一步计划
+
+-  增加 Shodan、ZoomEye 支持
+-  PDF 报告导出功能
+-  指纹规则自定义
+-  多用户协同与权限管理
+
+------
+
+## 🔐 法律与合规声明
+
+- 本工具仅用于教育与授权的渗透测试环境；
+- 禁止使用本项目从事任何非法活动；
+- 使用者需自行遵守所在地区的相关法律法规。
+
+------
+
+## 👨‍💻 开发者
+
+> 本项目由 @RetroYoung 开发。
+>
+> 如需项目合作或内部部署支持，请联系：Email: retro@stu.ppsuc.edu.cn
