@@ -13,12 +13,13 @@ func main() {
   ██║   ██║██║   ██║ ██║   ██║██║╚██╗██║██║  ██║██╔══╝  ██╔══██╗
   ╚██████╔╝╚██████╔╝ ╚██████╔╝██║ ╚████║██████╔╝███████╗██║  ██║
    ╚═════╝  ╚═════╝   ╚═════╝ ╚═╝  ╚═══╝╚═════╝ ╚══════╝╚═╝  ╚═╝
-                 GoUnder v0.1 - CDN Bypass & Fingerprint Scan
+            GoUnder v0.1 - CDN Bypass & Fingerprint Scan
 
-      ⛓ Engine     : GoLang Fast Recon Core
-      🎯 Target     : Reveal Real IP Behind CDN
-      🔍 Fingerprint: CMS / Framework / Server Detection
-      ☠ Status     : Cloak Engaged - Tracing Origin...
+      👤 Author         : retro
+      🚀 Engine         : GoLang Fast Recon Core
+      🎯 Target         : Reveal Real IP Behind CDN
+      🔍 Fingerprint    : CMS / Framework / Server Detection
+      💀 Status         : Cloak Engaged - Tracing Origin...
 
 `)
 	cmd.Execute()
