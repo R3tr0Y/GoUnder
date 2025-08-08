@@ -1,8 +1,6 @@
-package test
+package utils
 
-import "fmt"
-
-func fofaRules() string {
+func FofaRules() string {
 	return `&& server!="cloudflare" && server!="alicdn" &&` +
 		` server!="qcloud" && server!="yunjiasu" && server!="yupaicloud"` +
 		` && server!="upyun" && server!="ws" && server!="cdnws" &&` +
@@ -10,9 +8,6 @@ func fofaRules() string {
 		` && server!="akamaighost" && server!="cloudfront" && server!="hwcdn"` +
 		` && server!="wangzhansheshi" && server!="360wzws" && server!="incapsula"` +
 		` && server!="stackpath" && server!="keycdn" && cloud_name!="cloudfront"` +
-		` && org!="CLOUDFLARENET"`
-}
-
-func main() {
-	fmt.Println(fofaRules())
+		` && org!="CLOUDFLARENET" && server!="layun.com" && server!="*cdn*"` +
+		` && cloud_name!="Cloudflare"`
 }

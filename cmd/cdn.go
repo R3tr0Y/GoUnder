@@ -86,7 +86,7 @@ func cdnLookup(input string) [][]string {
 		// os.Exit(1)
 		log.Fatal(err)
 	}
-	fmt.Println("Fofa account loaded:", fofaCfg.Email)
+	fmt.Println("[+] Fofa account loaded:", fofaCfg.Email)
 
 	patterns := []string{"host", "title", "icon"}
 	if pattern != "" {
@@ -98,7 +98,7 @@ func cdnLookup(input string) [][]string {
 	for _, p := range patterns {
 		queries, encoded := get_queries(p, input)
 		if queries != nil {
-			fmt.Println("Query string:", queries)
+			fmt.Println(fmt.Sprintf("[+] Query string loaded: "+queries[0][:len(queries[0])-len(utils.FofaRules())]) + "+ <Fofa filter cdn Rules>...")
 		}
 		for _, enc := range encoded {
 			for _, ip := range Query(enc, "ip,port,host,org,country,region,city") {
@@ -126,14 +126,14 @@ func get_queries(p string, input string) ([]string, []string) {
 
 	switch p {
 	case "host":
-		q := fmt.Sprintf(`host="%s" && is_cloud=false`, extractHost(input))
+		q := fmt.Sprintf(`host="%s" `, extractHost(input)) + utils.FofaRules()
 		queries = append(queries, q)
 
 	case "title":
 		titles, _ := get_titles(input)
 		for _, title := range titles {
-			fmt.Println("Get website title:", title)
-			q := fmt.Sprintf(`title="%s" && is_cloud=false`, title)
+			fmt.Println("[+] Get website title:", title)
+			q := fmt.Sprintf(`title="%s" `, title) + utils.FofaRules()
 			queries = append(queries, q)
 		}
 
@@ -143,8 +143,8 @@ func get_queries(p string, input string) ([]string, []string) {
 			fmt.Println("get icon_hash failed:", err)
 			break
 		}
-		fmt.Println("Favicon hash:", iconHash)
-		q := fmt.Sprintf(`icon_hash="%s" && is_cloud=false`, iconHash)
+		fmt.Println("[+] Favicon hash loaded:", iconHash)
+		q := fmt.Sprintf(`icon_hash="%s" `, iconHash) + utils.FofaRules()
 		queries = append(queries, q)
 	}
 
