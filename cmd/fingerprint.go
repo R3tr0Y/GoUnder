@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -146,33 +147,73 @@ func whatcmdAnalyze(url string) []map[string]string {
 
 }
 func loadWhatcmsConfig() (*WhatcmsConfig, error) {
+	// configDir := "configs"
+	// fileName := "whatcms.json"
+	// path := filepath.Join(configDir, fileName)
+	// data, err := os.ReadFile(path)
+	// if err != nil {
+	// 	if errors.Is(err, os.ErrNotExist) {
+	// 		// 如果文件不存在，创建目录和文件
+	// 		log.Println("Config file not found, creating config file...")
+
+	// 		// 确保目录存在
+	// 		if err := os.MkdirAll(configDir, 0755); err != nil {
+	// 			return nil, fmt.Errorf("creating config failed: %w", err)
+	// 		}
+
+	// 		// 默认配置
+	// 		defaultCfg := WhatcmsConfig{Key: ""}
+	// 		defaultData, _ := json.MarshalIndent(defaultCfg, "", "  ")
+
+	// 		// 写入文件
+	// 		if err := os.WriteFile(path, defaultData, 0644); err != nil {
+	// 			return nil, fmt.Errorf("writing config file failed: %w", err)
+	// 		}
+
+	// 		log.Printf("Config file created: %s\nPlease complete the config file", path)
+	// 		os.Exit(1)
+	// 	}
+	// 	return nil, err
+	// }
+	// err = json.Unmarshal(data, &whatcmsCfg)
+	// return whatcmsCfg, err
 	configDir := "configs"
-	fileName := "whatcms.json"
-	path := filepath.Join(configDir, fileName)
+	filename := "whatcms.json"
+	path := filepath.Join(configDir, filename)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			// 如果文件不存在，创建目录和文件
-			log.Println("Config file not found, creating config file...")
-
-			// 确保目录存在
-			if err := os.MkdirAll(configDir, 0755); err != nil {
-				return nil, fmt.Errorf("creating config failed: %w", err)
+			sysType := runtime.GOOS
+			switch sysType {
+			case "linux":
+				configDir = filepath.Join(os.Getenv("HOME"), ".config", "GoUnder")
+			case "windows":
+				configDir = filepath.Join(os.Getenv("APPDATA"), "GoUnder")
+			case "darwin":
+				configDir = filepath.Join(os.Getenv("HOME"), "Library", "Application Support", "GoUnder")
 			}
+			path := filepath.Join(configDir, filename)
+			data, err = os.ReadFile(path)
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					log.Printf("Config file not found: %s\n", path)
+					if err := os.MkdirAll(configDir, 0755); err != nil {
+						return nil, fmt.Errorf("creating config failed: %w", err)
+					}
+					// 默认配置
+					defaultCfg := WhatcmsConfig{Key: ""}
+					defaultData, _ := json.MarshalIndent(defaultCfg, "", "  ")
 
-			// 默认配置
-			defaultCfg := WhatcmsConfig{Key: ""}
-			defaultData, _ := json.MarshalIndent(defaultCfg, "", "  ")
+					// 写入文件
+					if err := os.WriteFile(path, defaultData, 0644); err != nil {
+						return nil, fmt.Errorf("writing config file failed: %w", err)
 
-			// 写入文件
-			if err := os.WriteFile(path, defaultData, 0644); err != nil {
-				return nil, fmt.Errorf("writing config file failed: %w", err)
+					}
+				}
+				log.Printf("Config file created: %s\nPlease complete the config file", path)
+				return nil, err
 			}
-
-			log.Printf("Config file created: %s\nPlease complete the config file", path)
-			os.Exit(1)
 		}
-		return nil, err
 	}
 	err = json.Unmarshal(data, &whatcmsCfg)
 	return whatcmsCfg, err
