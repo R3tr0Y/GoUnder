@@ -83,11 +83,8 @@ func cdnLookup(input string) [][]string {
 	var err error
 	fofaCfg, err = loadFofaConfig()
 	if err != nil {
-		// fmt.Println("Read config file error:", err)
-		// os.Exit(1)
-		log.Fatal(err)
+		log.Fatalf("Error loading fofa config: %v\n", err)
 	}
-	fmt.Println("[+] Fofa account loaded:", fofaCfg.Email)
 
 	patterns := []string{"host", "title", "icon"}
 	if pattern != "" {
@@ -351,12 +348,17 @@ func loadFofaConfig() (*FofaConfig, error) {
 
 					}
 				}
-				log.Printf("Config file created: %s\nPlease complete the config file", path)
+				log.Printf("Config file created: %s\n❗ Please complete the config file:%s", path)
 				return nil, err
 			}
 		}
 	}
 	err = json.Unmarshal(data, &fofaCfg)
+	if fofaCfg.Email == "" || fofaCfg.Key == "" {
+		log.Println("❗ Please complete the fofa config file with your email and API key.")
+		os.Exit(1)
+	}
+	fmt.Printf("[+] Fofa account config loaded: %s\n", fofaCfg.Email)
 	return fofaCfg, err
 }
 

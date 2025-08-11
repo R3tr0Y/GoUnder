@@ -87,8 +87,6 @@ func whatcmdAnalyze(url string) []map[string]string {
 	whatcmsCfg, err := loadWhatcmsConfig()
 	if err != nil {
 		log.Fatalf("error loading whatcms config.\n")
-	} else {
-		fmt.Println("Whatcms account config loaded: " + whatcmsCfg.Key[:5] + "***")
 	}
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		url = "http://" + url
@@ -210,12 +208,17 @@ func loadWhatcmsConfig() (*WhatcmsConfig, error) {
 
 					}
 				}
-				log.Printf("Config file created: %s\nPlease complete the config file", path)
+				log.Printf("Config file created: %s\n❗ Please complete the config file%s", path)
 				return nil, err
 			}
 		}
 	}
 	err = json.Unmarshal(data, &whatcmsCfg)
+	if whatcmsCfg.Key == "" {
+		log.Println("❗ Please complete the whatcms config file with your API key.")
+		os.Exit(1)
+	}
+	fmt.Printf("[+] Whatcms account config loaded: %s***\n", whatcmsCfg.Key[:5])
 	return whatcmsCfg, err
 }
 
