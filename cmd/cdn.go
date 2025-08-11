@@ -348,7 +348,7 @@ func loadFofaConfig() (*FofaConfig, error) {
 
 					}
 				}
-				log.Printf("Config file created: %s\n❗ Please complete the config file:%s", path)
+				log.Printf("Config file created: %s\n❗ Please complete the config file:%s", path, path)
 				return nil, err
 			}
 		}
