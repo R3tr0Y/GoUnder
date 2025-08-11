@@ -107,6 +107,7 @@ http://localhost:8080/
   "key": "your_whatcms_api_key"
 }
 ```
+**如果编译二进制文件运行，则需要设置全局配置文件，请运行程序并根据程序提供的文件路径配置**
 
 ------
 
@@ -132,8 +133,8 @@ GoUnder/
 │   ├── cdn.go             # CDN绕过模块
 │   ├── fingerprint.go     # 指纹识别模块
 │   ├── webui.go           # Web UI模块
+│   ├── webui/static/      # 前端资源（静态页面）
 ├── configs/               # 配置文件目录
-├── webui/static/          # 前端资源（静态页面）
 ├── utils/                 # 工具函数（如icon hash计算）
 └── main.go                # 项目入口
 ```
