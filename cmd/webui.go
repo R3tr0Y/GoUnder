@@ -30,7 +30,7 @@ var webuiCmd = &cobra.Command{
 }
 
 func startWebui(host string, port string) {
-	fmt.Printf("Starting web ui on %s:[%s]...\n", host, port)
+	fmt.Printf("[+] Starting web ui on %s:[%s]...\n", host, port)
 	router := gin.Default()
 
 	// 将嵌入的静态文件系统映射到 Gin
@@ -138,6 +138,6 @@ func fpHandler(c *gin.Context) {
 
 func init() {
 	webuiCmd.Flags().StringVarP(&port, "port", "p", "8080", "listening port, eg: 8080")
-	webuiCmd.Flags().StringVarP(&host, "host", "u", "localhost", "listening port, eg: 8080")
+	webuiCmd.Flags().StringVarP(&host, "host", "u", "localhost", "host, eg: localhost")
 	rootCmd.AddCommand(webuiCmd)
 }
