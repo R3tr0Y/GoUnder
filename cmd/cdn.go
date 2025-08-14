@@ -107,6 +107,7 @@ func cdnLookup(input string) [][]string {
 		}
 	}
 	if len(resultSet) > 0 {
+		resultSet = unique2D(resultSet) // 去重
 		fmt.Println("\n✅ Promising target(s) found: ")
 		for _, ip := range resultSet {
 			fmt.Println("-", strings.Join(ip, ", "))
@@ -117,6 +118,20 @@ func cdnLookup(input string) [][]string {
 		return nil
 	}
 
+}
+
+// 去重 [][]string
+func unique2D(input [][]string) [][]string {
+	seen := make(map[string]bool)
+	var result [][]string
+	for _, arr := range input {
+		key := strings.Join(arr, ",")
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, arr)
+		}
+	}
+	return result
 }
 
 func get_queries(p string, input string) ([]string, []string) {
