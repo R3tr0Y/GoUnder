@@ -96,7 +96,7 @@ func cdnLookup(input string) [][]string {
 	for _, p := range patterns {
 		queries, encoded := get_queries(p, input)
 		if queries != nil {
-			fmt.Println(fmt.Sprintf("[+] Query string loaded: "+queries[0][:len(queries[0])-len(utils.FofaRules())]) + "+ <Fofa filter cdn Rules>...")
+			fmt.Printf("[+] Query string loaded: %s   %s\n", queries[0][:len(queries[0])-len(utils.FofaRules())], "+ <Fofa filter cdn Rules>...")
 		}
 		for _, enc := range encoded {
 			for _, ip := range Query(enc, "ip,port,host,org,country,region,city") {
