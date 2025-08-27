@@ -30,13 +30,6 @@ go build -o gounder main.go
 ./gounder --help
 ```
 
-或构建可执行文件：
-
-```
-go build -o gounder main.go
-./gounder --help
-```
-
 ### 🔌 CDN 绕过命令示例
 
 ```
@@ -70,7 +63,7 @@ go run main.go fingerprint -u http://example.com -e whatcms
 ### 🌐 启动 Web UI（默认端口 8080）
 
 ```
-go run main.go webui -p 8080 -u 0.0.0.0
+go run main.go webui -p 8080 -a 0.0.0.0
 ```
 
 访问地址：
@@ -107,7 +100,15 @@ http://localhost:8080/
   "key": "your_whatcms_api_key"
 }
 ```
-**如果编译二进制文件运行，则需要设置全局配置文件，请运行程序并根据程序提供的文件路径配置**
+**如果编译二进制文件运行，则需要设置全局配置文件，请运行程序并根据程序提供的文件路径配置，默认路径：**
+
+```
+linux: $HOME/.config/GoUnder
+
+windows: %APPDATA/GoUnder
+
+mac: $HOME/Library/Application\ Support/GoUnder
+```
 
 ------
 

@@ -138,6 +138,6 @@ func fpHandler(c *gin.Context) {
 
 func init() {
 	webuiCmd.Flags().StringVarP(&port, "port", "p", "8080", "listening port, eg: 8080")
-	webuiCmd.Flags().StringVarP(&host, "host", "u", "localhost", "host, eg: localhost")
+	webuiCmd.Flags().StringVarP(&host, "host", "a", "localhost", "host address, eg: localhost")
 	rootCmd.AddCommand(webuiCmd)
 }
