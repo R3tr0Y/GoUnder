@@ -65,6 +65,7 @@ func (f *FofaResponse) UnmarshalJSON(data []byte) error {
 var targetURL string
 var pattern string
 var fofaCfg *FofaConfig
+var logFlag bool
 
 var cdnCmd = &cobra.Command{
 	Use:   "cdn",
@@ -107,17 +108,29 @@ func cdnLookup(input string) [][]string {
 		}
 	}
 	if len(resultSet) > 0 {
-		resultSet = unique2D(resultSet) // 去重
+		resultSet = unique2D(resultSet)
 		fmt.Println("\n✅ Promising target(s) found: ")
+
+		var logContent strings.Builder
 		for _, ip := range resultSet {
-			fmt.Println("-", strings.Join(ip, ", "))
+			line := strings.Join(ip, ", ")
+			fmt.Println("-", line)
+			if logFlag {
+				logContent.WriteString(line + "\n")
+			}
 		}
+
+		// --- 新增日志记录逻辑 ---
+		if logFlag {
+			saveToLog(input, logContent.String())
+		}
+		// -----------------------
+
 		return resultSet
 	} else {
 		fmt.Println("\n❌ Could not find possible IP.")
 		return nil
 	}
-
 }
 
 // 去重 [][]string
@@ -422,8 +435,40 @@ func Query(encodedQuery string, fields ...string) [][]string {
 	// return unique
 }
 
+func saveToLog(input string, content string) {
+	// 1. 提取主机名作为文件名
+	host := extractHost(input)
+	host = strings.ReplaceAll(host, ":", "_") // 防止 Windows 下端口号导致的文件名非法
+
+	// 2. 创建 logs 目录
+	logDir := "logs"
+	if _, err := os.Stat(logDir); os.IsNotExist(err) {
+		_ = os.MkdirAll(logDir, 0755)
+	}
+
+	// 3. 构造完整路径 (例如: logs/example.com.log)
+	fileName := filepath.Join(logDir, host+".log")
+
+	// 4. 以追加模式打开文件，如果不存在则创建
+	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Printf("⚠️  Failed to write log: %v\n", err)
+		return
+	}
+	defer f.Close()
+
+	// 5. 写入时间戳和内容
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	logEntry := fmt.Sprintf("--- Scan at %s ---\n%s\n", timestamp, content)
+
+	if _, err := f.WriteString(logEntry); err == nil {
+		fmt.Printf("\n📝 Results appended to: %s\n", fileName)
+	}
+}
+
 func init() {
 	cdnCmd.Flags().StringVarP(&targetURL, "url", "u", "", "targetURL, eg:https://example.com")
 	cdnCmd.Flags().StringVarP(&pattern, "pattern", "p", "", "[host | title | icon], default: all")
+	cdnCmd.Flags().BoolVarP(&logFlag, "log", "", true, "log the details")
 	rootCmd.AddCommand(cdnCmd)
 }
