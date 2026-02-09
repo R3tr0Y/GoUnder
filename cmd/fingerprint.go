@@ -61,11 +61,20 @@ func wappalyzerAnalyze(url string) []map[string]string { //[]map[string]string
 	} else {
 		fingerprints := wappalyzerClient.Fingerprint(resp.Header, data)
 		if len(fingerprints) > 0 {
+			var logContent strings.Builder
 			fmt.Println("\n✅ Website fingerprints found in local wappalyzer database:")
 			results := convertTechMap(fingerprints)
 			for fingerprint := range fingerprints {
 				fmt.Printf("- %v\n", fingerprint)
+				if logFlag {
+					logContent.WriteString(fingerprint + "\n")
+				}
 			}
+			// --- 新增日志记录逻辑 ---
+			if logFlag {
+				saveToLog(url, logContent.String())
+			}
+			// -----------------------
 			return results
 		} else {
 			fmt.Println("❌ No website fingerprints found!")
@@ -74,13 +83,6 @@ func wappalyzerAnalyze(url string) []map[string]string { //[]map[string]string
 
 	}
 }
-
-type WhatcmsConfig struct {
-	Key string `json:"key"`
-}
-
-var whatcmsCfg *WhatcmsConfig
-var engine string
 
 func whatcmdAnalyze(url string) []map[string]string {
 	outcome := []map[string]string{}
@@ -111,6 +113,7 @@ func whatcmdAnalyze(url string) []map[string]string {
 	}
 	// 遍历 results 并输出格式化信息
 	if len(results) > 0 {
+		var logContent strings.Builder
 		fmt.Println("\n✅ Website fingerprints found in whatcms: ")
 		for _, item := range results {
 			obj, ok := item.(map[string]interface{})
@@ -136,7 +139,15 @@ func whatcmdAnalyze(url string) []map[string]string {
 			}
 			outcome = append(outcome, map[string]string{"tech": name, "version": version, "description": categories})
 			fmt.Println(output)
+			if logFlag {
+				logContent.WriteString(output + "\n")
+			}
 		}
+		// --- 新增日志记录逻辑 ---
+		if logFlag {
+			saveToLog(url, logContent.String())
+		}
+		// -----------------------
 		return outcome
 	} else {
 		fmt.Println("❌ No website fingerprints found!")
@@ -270,5 +281,6 @@ func convertTechMap(input map[string]struct{}) []map[string]string {
 func init() {
 	fingerprintCmd.Flags().StringVarP(&targetURL, "url", "u", "", "targetURL, eg: https://example.com")
 	fingerprintCmd.Flags().StringVarP(&engine, "engine", "e", "", "engine for analyzing website fingerprints, [ wappalyzer | whatcms | ], default: wappalyzer")
+	fingerprintCmd.Flags().BoolVarP(&logFlag, "log", "", true, "log the scan results")
 	rootCmd.AddCommand(fingerprintCmd)
 }
