@@ -70,7 +70,7 @@ func cdnLookup(input string) [][]string {
 		log.Fatalf("Error loading fofa config: %v\n", err)
 	}
 
-	patterns := []string{"host", "title", "icon"}
+	patterns := []string{"host", "cert"} // default host + cert
 	if pattern != "" {
 		patterns = []string{pattern}
 	}
@@ -154,6 +154,9 @@ func get_queries(p string, input string) ([]string, []string) {
 		}
 		fmt.Println("[+] Favicon hash loaded:", iconHash)
 		q := fmt.Sprintf(`icon_hash="%s" `, iconHash) + utils.FofaRules()
+		queries = append(queries, q)
+	case "cert":
+		q := fmt.Sprintf(`cert.subject.cn="%s" `, extractHost(input)) + utils.FofaRules()
 		queries = append(queries, q)
 	}
 
@@ -413,7 +416,7 @@ func Query(encodedQuery string, fields ...string) [][]string {
 
 func init() {
 	cdnCmd.Flags().StringVarP(&targetURL, "url", "u", "", "targetURL, eg:https://example.com")
-	cdnCmd.Flags().StringVarP(&pattern, "pattern", "p", "", "[host | title | icon], default: all")
+	cdnCmd.Flags().StringVarP(&pattern, "pattern", "p", "", "[host | title | icon | cert], default: host+cert")
 	cdnCmd.Flags().BoolVarP(&logFlag, "log", "", true, "log the results")
 	rootCmd.AddCommand(cdnCmd)
 }
