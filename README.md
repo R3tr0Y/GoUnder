@@ -6,7 +6,7 @@
 
 ## 🧠 项目功能
 
-- 🎯 **绕过 CDN**：通过 FOFA 数据接口，结合 `host`、`title` 与 `favicon hash` 策略定位目标真实 IP。
+- 🎯 **绕过 CDN**：通过 FOFA 数据接口，结合 `host`、`title`、 `favicon hash` 与 `cert` 策略定位目标真实 IP。
 - 🔍 **网站指纹识别**：集成 Wappalyzer 本地库与 WhatCMS API，实现网站技术栈探测。
 - 🌐 **图形界面支持**：提供 Web UI 页面，零门槛查询 CDN 与指纹信息。
 - 🧩 **模块化架构**：可扩展性强，支持更多信息源、指纹引擎与展示方式。
@@ -42,8 +42,8 @@ go run main.go cdn -u 911blw.com -p title
 | 参数 | 说明                                |
 | ---- | ----------------------------------- |
 | `-u` | 目标网站 URL                        |
-| `-p` | 查询策略：`host` / `title` / `icon` |
-
+| `-p` | 查询策略：`host` / `title` / `icon` / `cert` |
+| `--log` | 记录查询日志: `false`               |
 ------
 
 ### 🧬 指纹识别命令示例
@@ -105,7 +105,7 @@ http://localhost:8080/
 ```
 linux: $HOME/.config/GoUnder
 
-windows: %APPDATA/GoUnder
+windows: %APPDATA%/GoUnder
 
 mac: $HOME/Library/Application\ Support/GoUnder
 ```
@@ -134,6 +134,7 @@ GoUnder/
 │   ├── cdn.go             # CDN绕过模块
 │   ├── fingerprint.go     # 指纹识别模块
 │   ├── webui.go           # Web UI模块
+│   ├── utils_cmd.go       # 公共函数
 │   ├── webui/static/      # 前端资源（静态页面）
 ├── configs/               # 配置文件目录
 ├── utils/                 # 工具函数（如icon hash计算）
@@ -147,7 +148,6 @@ GoUnder/
 -  增加 Shodan、ZoomEye 支持
 -  PDF 报告生成功能
 - 批量检测和批量导出
--  自动更新本地指纹特征库
 
 ------
 
