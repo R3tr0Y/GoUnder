@@ -415,8 +415,8 @@ func Query(encodedQuery string, fields ...string) [][]string {
 }
 
 func init() {
-	cdnCmd.Flags().StringVarP(&targetURL, "url", "u", "", "targetURL, eg:https://example.com")
-	cdnCmd.Flags().StringVarP(&pattern, "pattern", "p", "", "[host | title | icon | cert], default: host+cert")
+	cdnCmd.Flags().StringVarP(&targetURL, "url", "u", "", "targetURL, eg: https://example.com")
+	cdnCmd.Flags().StringVarP(&pattern, "pattern", "p", "", "[host | title | icon | cert] (default: host + cert)")
 	cdnCmd.Flags().BoolVarP(&logFlag, "log", "", true, "log the results")
 	rootCmd.AddCommand(cdnCmd)
 }
